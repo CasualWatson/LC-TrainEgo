@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Xml;
 using Harmony;
 // using UnityEngine;
 
@@ -60,7 +61,7 @@ namespace TrainEgo
             return base.OnGiveDamage(actor, target, ref dmg);
         }
 
-        /*
+        /* OLD VERSION OF DAMAGE ABSORBTION 
         public override bool OnTakeDamage_After(float value, RwbpType type)
         {
             if (type == RwbpType.B)
@@ -70,15 +71,50 @@ namespace TrainEgo
         }
         */
     }
+
     public class Harmony_Patch
     {
         public static int totalTickets = 0;
         public static int ticketsRequired = 20;
 
+        // Properly set by loading IDs from .xml 
+        public static int trainWeaponID = 200000;
+        public static int trainArmorID = 300000;
+        public static int trainGiftID = 400000;
+
         public Harmony_Patch()
         {
             try
             {
+                XmlDocument doc = new XmlDocument();
+                // Get filepath here
+                doc.Load("");
+
+                XmlNode node = doc.DocumentElement.SelectSingleNode("/equipment_list");
+                foreach (XmlNode child in node.ChildNodes)
+                {
+                    foreach (XmlNode n in child.ChildNodes)
+                    {
+                        if (n.Name == "name")
+                        {
+                            if (n.InnerText == "HellTrain_weapon_name")
+                            {
+                                if (child.Attributes["type"] != null && child.Attributes["id"] != null)
+                                {
+                                    string type = child.Attributes["type"].Value;
+                                    int id = Int32.Parse(child.Attributes["id"].Value);
+                                    if (type == "weapon")
+                                        trainWeaponID = id;
+                                    else if (type == "armor")
+                                        trainArmorID = id;
+                                    else if (type == "special")
+                                        trainGiftID = id;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 HarmonyInstance hInstance = HarmonyInstance.Create("Lobotomy.S-Purple & Watson & NEET.TrainEgo");
                 hInstance.PatchAll(Assembly.GetExecutingAssembly());
                 FileLog.Log("TrainEgo Patching Successful");
