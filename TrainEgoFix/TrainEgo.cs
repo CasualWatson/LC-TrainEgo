@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Xml;
+using System.Linq;
 using Harmony;
-// using UnityEngine;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace TrainEgo
 {
@@ -82,13 +86,26 @@ namespace TrainEgo
         public static int trainArmorID = 300000;
         public static int trainGiftID = 400000;
 
+        // Default is English
+        public static string trainDialogueMath = "\"...{0}, add {1}. {2}...\"";
+        public static string trainDialogueThanks = "\"...Thanks for being a recurring patron...\"";
+
         public Harmony_Patch()
         {
             try
             {
                 XmlDocument doc = new XmlDocument();
-                // Get filepath here
-                doc.Load("");
+                XmlDocument doc2 = new XmlDocument();
+
+                var allFiles = Directory.GetFiles(Application.dataPath + "/BaseMods", "*.*", SearchOption.AllDirectories);
+                foreach (var file in allFiles)
+                {
+                    FileInfo info = new FileInfo(file);
+                    if (info.Name.Contains("TrainEquip.txt"))
+                        doc.Load(info.FullName);
+                    else if (info.Name.Contains("Counter.xml"))
+                        doc2.Load(info.FullName);
+                }
 
                 XmlNode node = doc.DocumentElement.SelectSingleNode("/equipment_list");
                 foreach (XmlNode child in node.ChildNodes)
@@ -97,7 +114,7 @@ namespace TrainEgo
                     {
                         if (n.Name == "name")
                         {
-                            if (n.InnerText == "HellTrain_weapon_name")
+                            if (n.InnerText == "Train_equip_name")
                             {
                                 if (child.Attributes["type"] != null && child.Attributes["id"] != null)
                                 {
@@ -111,27 +128,50 @@ namespace TrainEgo
                                         trainGiftID = id;
                                 }
                             }
+                            else if (n.InnerText == "Train_gift_name")
+                            {
+                                if (child.Attributes["type"] != null && child.Attributes["id"] != null)
+                                {
+                                    string type = child.Attributes["type"].Value;
+                                    int id = Int32.Parse(child.Attributes["id"].Value);
+                                    if (type == "special")
+                                        trainGiftID = id;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                XmlNode node2 = doc2.DocumentElement.SelectSingleNode("/translation");
+                foreach (XmlNode child in node2.ChildNodes)
+                {
+                    if (child.Name == GlobalGameManager.instance.language)
+                    {
+                        foreach (XmlNode c in child.ChildNodes)
+                        {
+                            if (c.Name == "math")
+                                trainDialogueMath = c.InnerText;
+                            else if (c.Name == "thanks")
+                                trainDialogueThanks = c.InnerText;
                         }
                     }
                 }
 
                 HarmonyInstance hInstance = HarmonyInstance.Create("Lobotomy.S-Purple & Watson & NEET.TrainEgo");
                 hInstance.PatchAll(Assembly.GetExecutingAssembly());
-                FileLog.Log("TrainEgo Patching Successful");
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                FileLog.Log("TrainEgo Patching Threw an Exception...");
+                FileLog.Log("TrainEgo Patching Threw an Exception... " + DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss tt"));
+                FileLog.Log(exception.ToString());
+                FileLog.Log(exception.Message);
+                FileLog.Log(exception.TargetSite.Name);
             }
         }
 
         [HarmonyPatch(typeof(HellTrain), "OnStageStart")]
         private class HellTrain_OnStageStart_Patch
         {
-            static void Prefix(HellTrain __instance)
-            {
-                __instance.Unit.model.metaInfo.qliphothMax = 999;
-            }
             static void Postfix()
             {
                 totalTickets = 0;
@@ -143,35 +183,45 @@ namespace TrainEgo
         {
             static void Prefix(HellTrain __instance)
             {
-                totalTickets += (int)AccessTools.Property(typeof(HellTrain), "_otherCreatureWorkCount").GetValue(__instance);
-                __instance.model.SetQliphothCounter(totalTickets);
+                int gain = 0;
+                int prev = totalTickets;
+                try
+                {
+                    gain = (int)Traverse.Create(__instance).Field("_otherCreatureWorkCount").GetValue();
+                    totalTickets += gain;
+                }
+                catch (Exception excep)
+                {
+                    FileLog.Log("Exception in getting Tickets:");
+                    FileLog.Log(excep.ToString());
+                }
+                __instance.model.ShowNarrationForcely(string.Format(trainDialogueMath, prev, gain, totalTickets));
             }
-            static void Postfix()
+            static void Postfix(HellTrain __instance)
             {
                 if (totalTickets >= ticketsRequired)
-                    Present();
+                    Present(ref __instance);
             }
         }
 
-        private static void Present()
+        private static void Present(ref HellTrain instance)
         {
-            int armorID = 0; // Armor ID
-            if (InventoryModel.Instance.CheckEquipmentCount(armorID))
-                InventoryModel.Instance.CreateEquipment(armorID);
-
-            int wepID = 0; // Weapon ID
-            if (InventoryModel.Instance.CheckEquipmentCount(wepID))
-                InventoryModel.Instance.CreateEquipment(wepID);
-        }
-
-        [HarmonyPatch(typeof(HellTrain), "HasRoomCounter")]
-        private class HellTrain_HasRoomCounter_Patch
-        {
-            static void Postfix(ref bool __result)
+            bool showDialogue = false;
+            if (InventoryModel.Instance.CheckEquipmentCount(trainArmorID))
             {
-                // Prevents any bugs involving lowering the Qliphoth counter
-                __result = false;
+                InventoryModel.Instance.CreateEquipment(trainArmorID);
+                instance.model.ShowNarrationForcely(trainDialogueThanks);
+                showDialogue = true;
             }
+
+            if (InventoryModel.Instance.CheckEquipmentCount(trainWeaponID))
+            {
+                InventoryModel.Instance.CreateEquipment(trainWeaponID);
+                if (!showDialogue)
+                    instance.model.ShowNarrationForcely(trainDialogueThanks);
+            }
+
+            totalTickets -= ticketsRequired;
         }
     }
 }
