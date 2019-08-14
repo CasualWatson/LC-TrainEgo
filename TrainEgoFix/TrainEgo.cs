@@ -76,6 +76,33 @@ namespace TrainEgo
         */
     }
 
+    public class HellTrainArmor : EquipmentScriptBase
+    {
+        private class HellTrainDebuff : UnitBuf
+        {
+            public HellTrainDebuff()
+            {
+                duplicateType = BufDuplicateType.ONLY_ONE;
+            }
+
+            public override void Init(UnitModel model)
+            {
+                base.Init(model);
+                remainTime = 10f;
+            }
+            public override float MovementScale()
+            {
+                return 0.5f;
+            }
+        }
+        public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
+        {
+            if (!target.HasUnitBuf(UnitBufType.SLOW_BULLET))
+                target.AddUnitBuf(new SlowBulletBuf(10f));
+            return base.OnGiveDamage(actor, target, ref dmg);
+        }
+    }
+
     public class Harmony_Patch
     {
         public static int totalTickets = 0;
@@ -219,6 +246,19 @@ namespace TrainEgo
                 InventoryModel.Instance.CreateEquipment(trainWeaponID);
                 if (!showDialogue)
                     instance.model.ShowNarrationForcely(trainDialogueThanks);
+            }
+
+            if (InventoryModel.Instance.CheckEquipmentCount(trainGiftID))
+            {
+                if (!instance.AllocatedAgent.HasEquipment(trainGiftID))
+                {
+                    EGOgiftModel gift = EGOgiftModel.MakeGift(EquipmentTypeList.instance.GetData(trainGiftID));
+                    AgentModel curAgent = (AgentModel)Traverse.Create(instance).Field("curAgent").GetValue();
+                    if (!curAgent.HasEquipment(trainGiftID))
+                        curAgent.AttachEGOgift(gift);
+                    if (!showDialogue)
+                        instance.model.ShowNarrationForcely(trainDialogueThanks);
+                }
             }
 
             totalTickets -= ticketsRequired;
