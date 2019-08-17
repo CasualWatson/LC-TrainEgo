@@ -60,8 +60,17 @@ namespace TrainEgo
             // Should make the weapon do no damage
             dmg = DamageInfo.zero;
             // Activate buff to absorb BLACK damage
-            if (!actor.HasUnitBuf(UnitBufType.BARRIER_B))
+            if (actor.HasUnitBuf(UnitBufType.BARRIER_B))
+            {
+                if (actor.GetUnitBufByName(typeof(HellTrainBuff).Name) == null)
+                {
+                    actor.RemoveUnitBuf(actor.GetUnitBufByType(UnitBufType.BARRIER_B));
+                    actor.AddUnitBuf(new HellTrainBuff());
+                }
+            }
+            else
                 actor.AddUnitBuf(new HellTrainBuff());
+
             return base.OnGiveDamage(actor, target, ref dmg);
         }
 
@@ -99,6 +108,10 @@ namespace TrainEgo
         {
             if (!target.HasUnitBuf(UnitBufType.SLOW_BULLET))
                 target.AddUnitBuf(new SlowBulletBuf(10f));
+            else
+            {
+
+            }
             return base.OnGiveDamage(actor, target, ref dmg);
         }
     }
@@ -248,18 +261,16 @@ namespace TrainEgo
                     instance.model.ShowNarrationForcely(trainDialogueThanks);
             }
 
-            if (InventoryModel.Instance.CheckEquipmentCount(trainGiftID))
+            if (!instance.AllocatedAgent.HasEquipment(trainGiftID))
             {
-                if (!instance.AllocatedAgent.HasEquipment(trainGiftID))
-                {
-                    EGOgiftModel gift = EGOgiftModel.MakeGift(EquipmentTypeList.instance.GetData(trainGiftID));
-                    AgentModel curAgent = (AgentModel)Traverse.Create(instance).Field("curAgent").GetValue();
-                    if (!curAgent.HasEquipment(trainGiftID))
-                        curAgent.AttachEGOgift(gift);
-                    if (!showDialogue)
-                        instance.model.ShowNarrationForcely(trainDialogueThanks);
-                }
+                EGOgiftModel gift = EGOgiftModel.MakeGift(EquipmentTypeList.instance.GetData(trainGiftID));
+                AgentModel curAgent = (AgentModel)Traverse.Create(instance).Field("curAgent").GetValue();
+                if (!curAgent.HasEquipment(trainGiftID))
+                    curAgent.AttachEGOgift(gift);
+                if (!showDialogue)
+                    instance.model.ShowNarrationForcely(trainDialogueThanks);
             }
+
 
             totalTickets -= ticketsRequired;
         }
