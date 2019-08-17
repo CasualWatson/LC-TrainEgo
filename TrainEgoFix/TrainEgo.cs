@@ -100,6 +100,11 @@ namespace TrainEgo
                 return 0.5f;
             }
         }
+        public HellTrainGift()
+        {
+            Harmony.FileLog.Log("TrainHat Constructed");
+        }
+
         public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
         {
             Harmony.FileLog.Log("TrainHat Damage Run");
@@ -109,6 +114,27 @@ namespace TrainEgo
                 Harmony.FileLog.Log("Added Train Debuff");
             }
             return base.OnGiveDamage(actor, target, ref dmg);
+        }
+        public override void OnGiveDamageAfter(UnitModel actor, UnitModel target, DamageInfo dmg)
+        {
+            base.OnGiveDamageAfter(actor, target, dmg);
+            Harmony.FileLog.Log("TrainHat PostDamage Run");
+            if (!target.HasUnitBuf(customType))
+            {
+                target.AddUnitBuf(new HellTrainDebuff());
+                Harmony.FileLog.Log("Added Train Debuff");
+            }
+        }
+
+        public override bool OnTakeDamage(UnitModel actor, ref DamageInfo dmg)
+        {
+            Harmony.FileLog.Log("TrainHat TakeDamage Run");
+            return base.OnTakeDamage(actor, ref dmg);
+        }
+        public override bool OnTakeDamage_After(float value, RwbpType type)
+        {
+            Harmony.FileLog.Log("TrainHat PostTakeDamage Run");
+            return base.OnTakeDamage_After(value, type);
         }
     }
 }
