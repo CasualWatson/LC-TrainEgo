@@ -169,15 +169,5 @@ namespace TrainEgoFix
 
             totalTickets -= ticketsRequired;
         }
-
-        // DEBUGGING/TESTING
-        [HarmonyPatch(typeof(NamelessFetusGift), "OnTakeDamage")]
-        private class NamelessFetusGift_OnTakeDamage_Patch
-        {
-            static void Postfix()
-            {
-                FileLog.Log("Fetus TakeDamage Ran");
-            }
-        }
     }
 }

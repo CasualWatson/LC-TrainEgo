@@ -100,41 +100,68 @@ namespace TrainEgo
                 return 0.5f;
             }
         }
+
         public HellTrainGift()
         {
-            Harmony.FileLog.Log("TrainHat Constructed");
+            Harmony.FileLog.Log("Gift Constructed.");
         }
 
         public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
         {
-            Harmony.FileLog.Log("TrainHat Damage Run");
+            Harmony.FileLog.Log("Gift OnGiveDamage ran");
             if (!target.HasUnitBuf(customType))
-            {
                 target.AddUnitBuf(new HellTrainDebuff());
-                Harmony.FileLog.Log("Added Train Debuff");
-            }
             return base.OnGiveDamage(actor, target, ref dmg);
         }
         public override void OnGiveDamageAfter(UnitModel actor, UnitModel target, DamageInfo dmg)
         {
+            Harmony.FileLog.Log("Gift OnGiveDamagePost ran");
             base.OnGiveDamageAfter(actor, target, dmg);
-            Harmony.FileLog.Log("TrainHat PostDamage Run");
-            if (!target.HasUnitBuf(customType))
-            {
-                target.AddUnitBuf(new HellTrainDebuff());
-                Harmony.FileLog.Log("Added Train Debuff");
-            }
         }
 
         public override bool OnTakeDamage(UnitModel actor, ref DamageInfo dmg)
         {
-            Harmony.FileLog.Log("TrainHat TakeDamage Run");
+            Harmony.FileLog.Log("Gift OnTakeDamage ran");
             return base.OnTakeDamage(actor, ref dmg);
         }
         public override bool OnTakeDamage_After(float value, RwbpType type)
         {
-            Harmony.FileLog.Log("TrainHat PostTakeDamage Run");
+            Harmony.FileLog.Log("Gift OnTakeDamagePost ran");
             return base.OnTakeDamage_After(value, type);
         }
     }
+
+    /*
+    // Was checking to make sure it wasn't a class mispelling or misdeclaration
+
+    public class TESTGIFT : EquipmentScriptBase 
+    {
+        public TESTGIFT()
+        {
+            Harmony.FileLog.Log("TESTGIFT Constructed.");
+        }
+
+        public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
+        {
+            Harmony.FileLog.Log("TESTGIFT OnGiveDamage ran");
+            return base.OnGiveDamage(actor, target, ref dmg);
+        }
+        public override void OnGiveDamageAfter(UnitModel actor, UnitModel target, DamageInfo dmg)
+        {
+            Harmony.FileLog.Log("TESTGIFT OnGiveDamagePost ran");
+            base.OnGiveDamageAfter(actor, target, dmg);
+        }
+
+        public override bool OnTakeDamage(UnitModel actor, ref DamageInfo dmg)
+        {
+            Harmony.FileLog.Log("TESTGIFT OnTakeDamage ran");
+            return base.OnTakeDamage(actor, ref dmg);
+        }
+        public override bool OnTakeDamage_After(float value, RwbpType type)
+        {
+            Harmony.FileLog.Log("TESTGIFT OnTakeDamagePost ran");
+            return base.OnTakeDamage_After(value, type);
+        }
+    }
+    */
 }
