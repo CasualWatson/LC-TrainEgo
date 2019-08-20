@@ -23,6 +23,7 @@ namespace TrainEgoFix
 
         public Harmony_Patch()
         {
+            FileLog.Log("==");
             try
             {
                 XmlDocument doc = new XmlDocument();
@@ -89,6 +90,7 @@ namespace TrainEgoFix
                 }
 
                 HarmonyInstance hInstance = HarmonyInstance.Create("Lobotomy.S-Purple & Watson & NEET.TrainEgo");
+                FileLog.Log("Patching off of: " + Assembly.GetExecutingAssembly().FullName);
                 hInstance.PatchAll(Assembly.GetExecutingAssembly());
                 FileLog.Log("Patching Done");
             }

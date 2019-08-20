@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace TrainEgo
 {
@@ -84,49 +85,62 @@ namespace TrainEgo
         static UnitBufType customType = UnitBufType.ADD_SUPERARMOR;
         private class HellTrainDebuff : UnitBuf
         {
+            private EffectInvoker slowEffect;
+            private UnityEngine.Color effectColor = UnityEngine.Color.Lerp(UnityEngine.Color.red, UnityEngine.Color.yellow, 0.5f);
+
             public HellTrainDebuff()
             {
-                duplicateType = BufDuplicateType.ONLY_ONE;
                 type = customType; // Custom UnitBufType
+                duplicateType = BufDuplicateType.ONLY_ONE;
+                remainTime = 10f;
             }
 
             public override void Init(UnitModel model)
             {
                 base.Init(model);
-                remainTime = 10f;
+                slowEffect = EffectInvoker.Invoker("SlowEffect", model.GetMovableNode(), remainTime, false);
+                var partSys = slowEffect.GetComponentInChildren<UnityEngine.ParticleSystem>();
+                var partSysMain = partSys.main;
+                partSysMain.startColor = UnityEngine.Color.Lerp(partSysMain.startColor.color, UnityEngine.Color.red, 0.6f);
+                slowEffect.Attach();
             }
             public override float MovementScale()
             {
                 return 0.5f;
             }
         }
-
         public HellTrainGift()
         {
-            Harmony.FileLog.Log("Gift Constructed.");
+            try
+            {
+                Harmony.FileLog.Log("TrainGift Constructed");
+                Harmony.FileLog.Log("Owned by: " + model.owner.GetUnitName());
+            }
+            catch (Exception exception)
+            {
+                Harmony.FileLog.Log(exception.ToString());
+            }
         }
 
         public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
         {
-            Harmony.FileLog.Log("Gift OnGiveDamage ran");
-            if (!target.HasUnitBuf(customType))
-                target.AddUnitBuf(new HellTrainDebuff());
+            Harmony.FileLog.Log("OnGiveDamage Train");
+            target.AddUnitBuf(new HellTrainDebuff());
             return base.OnGiveDamage(actor, target, ref dmg);
         }
         public override void OnGiveDamageAfter(UnitModel actor, UnitModel target, DamageInfo dmg)
         {
-            Harmony.FileLog.Log("Gift OnGiveDamagePost ran");
             base.OnGiveDamageAfter(actor, target, dmg);
+            Harmony.FileLog.Log("OnGiveDamageAfter Train");
         }
-
         public override bool OnTakeDamage(UnitModel actor, ref DamageInfo dmg)
         {
-            Harmony.FileLog.Log("Gift OnTakeDamage ran");
+            Harmony.FileLog.Log("OnTakeDamage Train");
             return base.OnTakeDamage(actor, ref dmg);
         }
         public override bool OnTakeDamage_After(float value, RwbpType type)
         {
-            Harmony.FileLog.Log("Gift OnTakeDamagePost ran");
+            Harmony.FileLog.Log("OnTakeDamageAfter Train");
             return base.OnTakeDamage_After(value, type);
         }
     }
