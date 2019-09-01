@@ -81,19 +81,49 @@ namespace TrainEgo
 
     public class HellTrainGift : EquipmentScriptBase
     {
-        private static List<string> debuffList = new List<string>();
+        private const float rTime = 10f;
+        public static Harmony.Traverse EffectTrav
+        {
+            get { return Harmony.Traverse.Create(EffectLayer.currentLayer); }
+        }
 
         // static UnitBufType customType = (UnitBufType)Enum.GetValues(typeof(UnitBufType)).Cast<int>().Max() + 123;
-        static UnitBufType customType = UnitBufType.ADD_SUPERARMOR;
+
+        public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
+        {
+            HellTrainDebuff debuff = new HellTrainDebuff();
+
+            if (!target.HasUnitBuf(debuff.type))
+                target.AddUnitBuf(debuff);
+            else
+                (target.GetUnitBufByType(debuff.type) as HellTrainDebuff).RemainTime = rTime;
+
+            return base.OnGiveDamage(actor, target, ref dmg);
+        }
+
+        // Debuff Class Starts Here
         private class HellTrainDebuff : UnitBuf
         {
             private EffectInvoker slowEffect = null;
+            public float RemainTime
+            {
+                get { return remainTime; }
+                set
+                {
+                    remainTime = value;
+                    
+                    var buffList = (List<EffectLayer.Management>)EffectTrav.Field("_scaled").GetValue();
+                    EffectLayer.Management manag = buffList.Find(x => x.effect.name == slowEffect.name);
+                    manag.elapsed = 0f;
+                    manag.lifeTime = value;
+                }
+            }
 
             public HellTrainDebuff()
             {
-                type = customType; // Custom UnitBufType
+                type = UnitBufType.ADD_SUPERARMOR; // Custom UnitBufType
                 duplicateType = BufDuplicateType.ONLY_ONE;
-                remainTime = 10f;
+                remainTime = rTime;
             }
 
             public override void Init(UnitModel model)
@@ -114,15 +144,22 @@ namespace TrainEgo
             public override void OnDestroy()
             {
                 base.OnDestroy();
-                UnityEngine.Object.Destroy(slowEffect.gameObject);
-                // foreach (UnityEngine.Transform trans in slowEffect.get)
-            }
-        }
 
-        public override bool OnGiveDamage(UnitModel actor, UnitModel target, ref DamageInfo dmg)
-        {
-            target.AddUnitBuf(new HellTrainDebuff());
-            return base.OnGiveDamage(actor, target, ref dmg);
+                /*
+                var buffTrav = EffectTrav.Field("_scaled");
+                var buffList = (List<EffectLayer.Management>)buffTrav.GetValue();
+                buffList.RemoveAll(x => x.effect = slowEffect);
+
+                var deleteTrav = EffectTrav.Field("_deleted");
+                var deleteList = (List<EffectLayer.Management>)deleteTrav.GetValue();
+                deleteList.RemoveAll(x => x.effect = slowEffect);
+
+                buffTrav.SetValue(buffList);
+                deleteTrav.SetValue(deleteList);
+
+                UnityEngine.Object.Destroy(slowEffect.gameObject);
+                */
+            }
         }
     }
 

@@ -23,7 +23,6 @@ namespace TrainEgoFix
 
         public Harmony_Patch()
         {
-            FileLog.Log("==");
             try
             {
                 XmlDocument doc = new XmlDocument();
@@ -90,9 +89,7 @@ namespace TrainEgoFix
                 }
 
                 HarmonyInstance hInstance = HarmonyInstance.Create("Lobotomy.S-Purple & Watson & NEET.TrainEgo");
-                FileLog.Log("Patching off of: " + Assembly.GetExecutingAssembly().FullName);
                 hInstance.PatchAll(Assembly.GetExecutingAssembly());
-                FileLog.Log("Patching Done");
             }
             catch (Exception exception)
             {
@@ -119,6 +116,7 @@ namespace TrainEgoFix
             {
                 int gain = 0;
                 int prev = totalTickets;
+
                 try
                 {
                     gain = (int)Traverse.Create(__instance).Field("_otherCreatureWorkCount").GetValue();
@@ -129,7 +127,16 @@ namespace TrainEgoFix
                     FileLog.Log("Exception thrown in getting Tickets:");
                     FileLog.Log(excep.ToString());
                 }
-                __instance.model.ShowNarrationForcely(string.Format(trainDialogueMath, prev, gain, totalTickets));
+
+                try
+                {
+                    __instance.model.ShowNarrationForcely(string.Format(trainDialogueMath, prev, gain, totalTickets));
+                }
+                catch (Exception excep)
+                {
+                    FileLog.Log("Exception in showing Narration");
+                    FileLog.Log(excep.ToString());
+                }
             }
             static void Postfix(HellTrain __instance)
             {
@@ -166,8 +173,6 @@ namespace TrainEgoFix
             curAgent.AttachEGOgift(gift);
             if (!showDialogue)
                 instance.model.ShowNarrationForcely(trainDialogueThanks);
-            showDialogue = true;
-
 
             totalTickets -= ticketsRequired;
         }
